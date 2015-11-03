@@ -1,0 +1,11 @@
+{% extends "layout.html" %}
+{% block body %}
+<h1>Søknaden er sendt</h1>
+<p>Søknaden om reisestipend for studiereise til <em>{{grants_application.location}}</em>
+  i tidsrommet <em>{{grants_application.time_span}}</em> er nå sendt til
+  <em>{{grants_application.learning_association.get().name}}</em>. Ta kontakt med
+  studieforbundet hvis du har spørsmål.
+</p>
+<p>En kopi av søknaden er sendt på epost til <em>{{grants_application.email}}</em>.</p>
+<p>Takk for at du søkte om reisestipend - og lykke til!</p>
+{% endblock %}

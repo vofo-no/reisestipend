@@ -1,1 +1,56 @@
-Hello world!
+{% extends "layout.html" %}
+{% block body %}
+      <div class="alert alert-warning">
+        <span class="h3">Søknadsfrist er 24. november {{application_year-1}}.</span>
+        <p>Søkere som har mottatt reisestipend fra KD/VOFO i løpet av de siste 5 årene ({{application_year-6}}-{{application_year-1}}) vil ikke bli vurdert.</p>
+      </div>
+      <hr>
+      <form method="post">
+        <fieldset>
+          <legend><span class="glyphicon glyphicon-user"></span>  Opplysninger om søkeren</legend>
+          {{input('name', 'Navn')}}
+          {{input('address', 'Adresse')}}
+          <div class="form-group row">
+            {{input('postal_code', 'Postnummer', wrapper_class='col-xs-4')}}
+            {{input('postal_city', 'Poststed', wrapper_class='col-xs-8')}}
+          </div>
+          {{input('phone', 'Telefon (dagtid)')}}
+          {{input('email', 'Epostadresse', type='email')}}
+          {{input('organization', 'Organisasjon/arbeidsfelt/funksjon')}}
+          {{input('learning_association', 'Studieforbund', type='select', options=learning_associations)}}
+        </fieldset>
+        <hr>
+        <fieldset>
+          <legend><span class="glyphicon glyphicon-time"></span> Tidligere tildelt stipend fra KD/VOFO</legend>
+          {% for item in grants_application.previous_grants %}
+          <div class="form-group row">
+            {{input('previous_grants_year', 'Årstall', type='year', id='previous_grants_year_%d'%(loop.index), wrapper_class='col-xs-4', required=False, true_value=item.year)}}
+            {{input('previous_grants_location', 'Sted (land)', id='previous_grants_location_%d'%(loop.index), wrapper_class='col-xs-8', required=False, true_value=item.location)}}
+          </div>
+          {% endfor %}
+        </fieldset>
+        <hr>
+        <fieldset>
+          <legend><span class="glyphicon glyphicon-globe"></span> Plan for studiereisen</legend>
+          {{input('location', 'Sted (land)')}}
+          {{input('time_span', 'Tidsrom')}}
+          {{input('expenses', 'Antatte totale reisekostnader (i hele kroner)')}}
+          {{input('purpose', 'Formål med studiereisen', type='textarea')}}
+          {{input('study_program', 'Program for studieoppholdet', type='textarea')}}
+        </fieldset>
+        <hr>
+        <fieldset>
+          <legend><span class="glyphicon glyphicon-piggy-bank"></span> Andre offentlige tilskudd det søkes om til samme studiereise</legend>
+          {% for item in grants_application.other_grants %}
+          <div class="form-group row">
+            {{input('other_grants_provider', 'Fra', id='other_grants_provider_%d'%(loop.index), wrapper_class='col-xs-8', required=False, true_value=item.provider)}}
+            {{input('other_grants_amount', 'Beløp (i hele kroner)', id='other_grants_amount_%d'%(loop.index), wrapper_class='col-xs-4', required=False, true_value=item.amount)}}
+          </div>
+          {% endfor %}
+        </fieldset>
+        <hr>
+        <p>Ved å sende søknaden bekrefter du at opplysningene i søknaden er korrekte, og at du som søker tilfredsstiller de kravene som stilles til mottakere av VOFOs reisestipend. Les hele utlysningen på <a href="http://www.vofo.no/reisestipend" target="_blank">vofo.no/reisestipend</a>.</p>
+        <p>Søknaden sendes til studieforbundets sentralledd, som samler og prioriterer søknadene før de sendes til VOFO.</p>
+        <button class="btn btn-lg btn-primary"><span class="glyphicon glyphicon-send"></span> &nbsp; Send søknaden</button>
+      </form>
+{% endblock %}

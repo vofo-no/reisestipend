@@ -1,0 +1,86 @@
+<!doctype html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang=""> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8" lang=""> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9" lang=""> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang=""> <!--<![endif]-->
+  <head>
+      <meta charset="utf-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+      <title>Søknad om reisestipend {{ application_year }}</title>
+      <meta name="description" content="">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+
+      <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+      <style>
+          body {
+              padding-bottom: 20px;
+          }
+          .btn.align-with-input { margin-top: 25px; }
+      </style>
+  </head>
+  <body>
+        <!--[if lt IE 8]>
+            <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+        <![endif]-->
+
+    <!-- Main jumbotron for a primary marketing message or call to action -->
+    <div class="jumbotron">
+      <div class="container">
+        <h1>Administrer studieforbund</h1>
+      </div>
+    </div>
+
+    <div class="container">
+      {% if learning_association %}
+        <form method="post">
+          <div class="form-group">
+            <label for="name">Navn:</label>
+            <input type="text" name="name" id="name" value="{{learning_association.name|e}}" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label for="email">Epostadresse:</label>
+            <input type="email" name="email" id="email" value="{{learning_association.email|e}}" class="form-control" />
+          </div>
+          <div class="form-group">
+            <div class="checkbox">
+              <label>
+                <input type="checkbox" name="active" id="active" value="true" {%- if learning_association.active %}checked="checked"{%- endif %} />
+                Aktiv
+               </label>
+            </div>
+          </div>
+          <div class="form-group">
+            <button class="btn btn-success">Lagre</button>
+          </div>
+        </form>
+      {% else %}
+        <p><a href="/admin?sf=new" class="btn btn-success">Nytt studieforbund</a></p>
+      {% endif %}
+
+      {% if learning_associations %}
+        <table class="table">
+          <thead>
+            <tr><th>Navn</th><th>Epostadresse</th><th>Aktiv?</th></tr>
+          </thead>
+          <tbody>
+            {% for item in learning_associations %}
+            <tr>
+              <td><a href="/admin?sf={{item.key.id()}}">{{item.name}}</a></td>
+              <td>{{item.email}}</td>
+              <td>{{item.active}}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+
+      <hr>
+
+      <footer>
+        <p>&copy; <a href="http://www.vofo.no">Voksenopplæringsforbundet</a></p>
+      </footer>
+    </div> <!-- /container -->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+  </body>
+</html>
