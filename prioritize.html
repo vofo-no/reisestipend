@@ -1,0 +1,94 @@
+{% extends "layout.html" %}
+{% block body %}
+
+{% macro application(app) -%}
+<div class="panel panel-primary">
+  <div class="panel-heading">
+    <div class="row">
+      <div class="col-xs-8">
+      <p class="panel-title"><small>{{app.sent_at.strftime("%d.%m.%y")}}</small><br>Søknad fra {{app.name}} om reisestipend til {{app.location}}</p>
+    </div>
+    <div class="col-xs-4 text-right">
+      <span class="badge badge-default">
+        {% if app.priority > 0 %}
+        Prioritet: {{app.priority}}
+        {% elif app.priority == 0 %}
+        Ikke prioritert
+        {% else %}
+        Ny
+        {% endif %}
+      </span>
+      &nbsp;
+      <a class="btn btn-primary" role="button" data-toggle="collapse" href="#app_{{app.key.id()}}"
+      aria-expanded="false" aria-controls="app_{{app.key.id()}}">Vis søknad</a>
+    </div>
+    </div>
+  </div>
+  <div class="collapse" id="app_{{app.key.id()}}">
+    <div class="panel-body">
+      <address>
+        <strong>{{app.name}}</strong><br>
+        {{app.address}}, {{app.postal_code}} {{app.postal_city}}<br>
+        Telefon (dagtid): {{app.phone}}<br>
+        <a href="mailto:{{app.email}}">{{app.email}}</a>
+      </address>
+      <dl>
+        <dt>Organisasion/arbeidsfelt/funksjon</dt>
+        <dd>{{app.organization}}</dd>
+        <dt>Studieforbund</dt>
+        <dd>{{app.learning_association_name}}<br></dd>
+        <dt>Tidligere tildelt stipend</dt>
+        <dd>{% if app.previous_grants %}{% for item in app.previous_grants %}{{item.year}}: {{item.location}}
+          {% endfor %}{% else %}(ingen){% endif %}</dd>
+      </dl>
+      <h3>Plan for studiereisen</h3>
+      <dl>
+        <dt>Sted (land)</dt>
+        <dd>{{app.location}}</dd>
+        <dt>Tidsrom</dt>
+        <dd>{{app.time_span}}<br></dd>
+        <dt>Antatte totale reisekostnader</dt>
+        <dd>{{app.expenses}}</dd>
+        <dt>Formål med stuidereisen</dt>
+        <dd>{{app.purpose}}</dd>
+        <dt>Program for studieoppholdet</dt>
+        <dd>{{app.study_program}}</dd>
+        <dt>Andre offentlige tilskudd det søkes om til samme studiereise</dt>
+        <dd>{% if app.other_grants %}{% for item in app.other_grants %}{{item.provider}}, beløp: {{item.location}}
+          {% endfor %}{% else %}(ingen){% endif %}</dd>
+      </dl>
+      <hr>
+      <form method="post" class="form-inline silent">
+      <input type="hidden" name="grants_application" value="{{app.key.urlsafe()}}" />
+      <div class="form-group">
+        <label for="priority_{{app.key.id()}}">Studieforbundets prioritet:&nbsp;</label>
+        <select id="priority_{{app.key.id()}}" name="priority" class="form-control">
+          <option value="0">Ikke prioritert</option>
+          {% for i in range(1, 11)%}
+          <option value="{{i}}" {% if i==app.priority %} selected{% endif %}>Prioritet {{i}}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary">Lagre</button>
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
+{%- endmacro %}
+
+<h1>Søknader fra ditt studieforbund</h1>
+<h2>Prioriterte søknader</h2>
+<div class="applications">
+  {% for item in prioritized_grants_applications %}
+  {{application(item)}}
+  {% endfor %}
+</div>
+<hr>
+<h2>Andre søknader</h2>
+<div class="applications">
+  {% for item in grants_applications %}
+  {{application(item)}}
+  {% endfor %}
+</div>
+
+{% endblock %}

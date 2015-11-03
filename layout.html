@@ -16,6 +16,9 @@
               padding-bottom: 20px;
           }
           .btn.align-with-input { margin-top: 25px; }
+          .applications dd {
+            white-space: pre-line;
+          }
       </style>
   </head>
   <body>
@@ -75,7 +78,7 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
     <script>
     $(function() {
-      $('form').on('submit', function(e) {
+      $('form.confirm').on('submit', function(e) {
         if(confirm('Er du sikker på at du vil sende søknaden nå?')) { $(this).find(':button').prop('disabled', true)} else { e.preventDefault(); }
       });
     });

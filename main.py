@@ -7,6 +7,7 @@ sys.setdefaultencoding('utf8')
 
 import os
 import logging
+import time
 
 from google.appengine.api import mail
 from google.appengine.api import users
@@ -41,7 +42,7 @@ class LearningAssociation(ndb.Model):
 
 class PreviousGrants(ndb.Model):
     """Sub model for previous grants."""
-    year = ndb.StringProperty('y', required=True)
+    year = ndb.StringProperty('y', required=True, default="")
     location = ndb.StringProperty('l', required=True, default="")
 
 class OtherGrants(ndb.Model):
@@ -58,6 +59,7 @@ class TravelGrantsApplication(ndb.Model):
     phone =         ndb.StringProperty(required=True, default="")
     email =         ndb.StringProperty(required=True, default="")
     organization =  ndb.StringProperty(required=True, default="")
+    learning_association = ndb.KeyProperty(kind=LearningAssociation, required=True)
     previous_grants = ndb.StructuredProperty(PreviousGrants, repeated=True)
     location =      ndb.StringProperty(required=True, default="")
     time_span =     ndb.StringProperty(required=True, default="")
@@ -67,8 +69,9 @@ class TravelGrantsApplication(ndb.Model):
     study_program = ndb.TextProperty(required=True, default="")
     sent_at =       ndb.DateTimeProperty(required=True)
     application_year = ndb.IntegerProperty(required=True, default=APPLICATION_YEAR)
-    priority =      ndb.IntegerProperty(choices=range(1,10))
+    priority =      ndb.IntegerProperty(choices=range(11))
     remark =        ndb.TextProperty()
+    learning_association_name = ndb.ComputedProperty(lambda self: self.learning_association.get().name)
 
 class MainHandler(webapp2.RequestHandler):
     def render_form(self, grants_application, errors={}):
@@ -99,7 +102,7 @@ class MainHandler(webapp2.RequestHandler):
         grants_application = TravelGrantsApplication(parent=ndb.Key('Year', APPLICATION_YEAR))
         errors = {}
 
-        for item in ['name', 'address', 'postal_code', 'postal_city', 'phone', 'email', 'organization', 'learning_association', 'location', 'time_span', 'expenses', 'purpose', 'study_program']:
+        for item in ['name', 'address', 'postal_code', 'postal_city', 'phone', 'email', 'organization', 'location', 'time_span', 'expenses', 'purpose', 'study_program']:
             setattr(grants_application, item, self.request.POST.get(item))
             if not getattr(grants_application, item):
                 errors[item] = 'missing'
@@ -116,13 +119,15 @@ class MainHandler(webapp2.RequestHandler):
             previous_grants = PreviousGrants()
             previous_grants.year = item
             previous_grants.location = self.request.POST.getall('previous_grants_location')[i]
-            grants_application.previous_grants.append(previous_grants)
+            if not previous_grants == PreviousGrants():
+                grants_application.previous_grants.append(previous_grants)
 
         for i, item in enumerate(self.request.POST.getall('other_grants_provider')):
             other_grants = OtherGrants()
             other_grants.provider = item
             other_grants.amount = self.request.POST.getall('other_grants_amount')[i]
-            grants_application.other_grants.append(other_grants)
+            if not other_grants == OtherGrants():
+                grants_application.other_grants.append(other_grants)
 
         if (len(errors) > 0):
             self.render_form(grants_application, errors)
@@ -135,14 +140,14 @@ class MainHandler(webapp2.RequestHandler):
                 for item in grants_application.previous_grants:
                     previous_grants_text.append("- År: %s\n- Sted (land): %s\n" % (item.year, item.location))
             else:
-                previous_grants_text.append = "[ingen]"
+                previous_grants_text.append("[ingen]")
 
             other_grants_text = []
             if len(grants_application.other_grants) > 0:
                 for item in grants_application.other_grants:
                     other_grants_text.append("- Fra: %s\n- Beløp: %s\n" % (item.provider, item.amount))
             else:
-                other_grants_text.append = "[ingen]"
+                other_grants_text.append("[ingen]")
 
             application_text = """
 SØKER:
@@ -253,8 +258,44 @@ class AdminHandler(webapp2.RequestHandler):
                 learning_association.put()
         self.redirect('/admin')
 
+class PrioritizeHandler(webapp2.RequestHandler):
+    def my_scope(self):
+        user = users.get_current_user()
+        if users.is_current_user_admin():
+            return TravelGrantsApplication.query()
+        elif user:
+            user_learning_association = LearningAssociation.query(LearningAssociation.email == user.email).get()
+            if user_learning_association:
+                return TravelGrantsApplication.query(TravelGrantsApplication.learning_association == user_learning_association.key)
+            else:
+                self.abort(403)
+        else:
+            self.redirect(users.create_login_url(self.request.uri))
+
+    def get(self):
+        prioritized_grants_applications = self.my_scope().filter(TravelGrantsApplication.priority > 0).order(TravelGrantsApplication.priority).fetch()
+        grants_applications = self.my_scope().filter(TravelGrantsApplication.priority < 1).order(TravelGrantsApplication.priority, TravelGrantsApplication.sent_at).fetch()
+
+        template_values = {
+            'application_year': APPLICATION_YEAR,
+            'grants_applications': grants_applications,
+            'prioritized_grants_applications': prioritized_grants_applications
+        }
+
+        template = JINJA_ENVIRONMENT.get_template('prioritize.html')
+        self.response.write(template.render(template_values))
+
+    def post(self):
+        item = self.my_scope().filter(TravelGrantsApplication.key==ndb.Key(urlsafe=self.request.POST.get('grants_application'))).get()
+        if item:
+            item.priority = int(self.request.POST.get('priority'))
+            item.put()
+            time.sleep(0.3)
+        self.redirect('/prioriter')
+
 
 app = webapp2.WSGIApplication([
     ('/', MainHandler),
-    ('/admin', AdminHandler)
+    ('/admin', AdminHandler),
+    ('/prioriter', PrioritizeHandler)
 ], debug=True)
