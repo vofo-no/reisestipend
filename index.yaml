@@ -10,6 +10,22 @@ indexes:
 # automatically uploaded to the admin console when you next deploy
 # your application using appcfg.py.
 
+- kind: Otp
+  properties:
+  - name: token
+  - name: valid_until
+
+- kind: TravelGrantsApplication
+  properties:
+  - name: learning_association
+  - name: priority
+
+- kind: TravelGrantsApplication
+  properties:
+  - name: learning_association
+  - name: priority
+  - name: sent_at
+
 - kind: TravelGrantsApplication
   properties:
   - name: priority

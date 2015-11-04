@@ -8,14 +8,18 @@ sys.setdefaultencoding('utf8')
 import os
 import logging
 import time
+import datetime
+import string
+import random
 
 from google.appengine.api import mail
 from google.appengine.api import users
 from google.appengine.ext import ndb
-from datetime import datetime
 
 import jinja2
 import webapp2
+
+from Crypto.Hash import SHA256
 
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
@@ -62,6 +66,13 @@ class TravelGrantsApplication(ndb.Model):
     priority =      ndb.IntegerProperty(choices=range(11))
     remark =        ndb.TextProperty()
     learning_association_name = ndb.ComputedProperty(lambda self: self.learning_association.get().name)
+
+class Otp(ndb.Model):
+    """Model for storing OTP tokens."""
+    learning_association = ndb.KeyProperty(kind=LearningAssociation)
+    token = ndb.StringProperty()
+    valid_from = ndb.DateTimeProperty(auto_now=True)
+    valid_until = ndb.ComputedProperty(lambda self: self.valid_from + datetime.timedelta(minutes=30))
 
 class MainHandler(webapp2.RequestHandler):
     def render_form(self, grants_application, errors={}):
@@ -123,7 +134,7 @@ class MainHandler(webapp2.RequestHandler):
         if (len(errors) > 0):
             self.render_form(grants_application, errors)
         else:
-            grants_application.sent_at = datetime.now()
+            grants_application.sent_at = datetime.datetime.now()
             grants_application.put()
 
             previous_grants_text = []
@@ -260,43 +271,108 @@ class AdminHandler(webapp2.RequestHandler):
         self.redirect('/admin')
 
 class PrioritizeHandler(webapp2.RequestHandler):
-    def my_scope(self):
-        user = users.get_current_user()
+    __scope = None
+
+    def dispatch(self):
+        self.__scope = None
+        auth_token = self.request.cookies.get('auth_token')
         if users.is_current_user_admin():
-            return TravelGrantsApplication.query()
-        elif user:
-            user_learning_association = LearningAssociation.query(LearningAssociation.email == user.email).get()
-            if user_learning_association:
-                return TravelGrantsApplication.query(TravelGrantsApplication.learning_association == user_learning_association.key)
+            if self.request.get('logg_ut') == 'true':
+                self.redirect(users.create_logout_url('/prioriter'))
             else:
-                self.abort(403)
-        else:
-            self.redirect(users.create_login_url(self.request.uri))
+                self.__scope = TravelGrantsApplication.query()
+        elif auth_token:
+            auth_token = SHA256.new(auth_token).hexdigest()
+            if self.request.get('logg_ut') == 'true':
+                ndb.delete_multi_async(Otp.query(ndb.OR(Otp.token==auth_token, Otp.valid_until<datetime.datetime.now())).fetch(options=ndb.QueryOptions(keys_only=True)))
+                self.response.delete_cookie('auth_token')
+                self.redirect('/prioriter')
+            else:
+                otp = Otp.query(ndb.AND(Otp.token==auth_token, Otp.valid_until>datetime.datetime.now())).get()
+                if otp:
+                    self.__scope = TravelGrantsApplication.query(TravelGrantsApplication.learning_association == otp.learning_association)
+                    otp.put() # Refresh expiration
+
+        super(PrioritizeHandler, self).dispatch()
 
     def get(self):
-        prioritized_grants_applications = self.my_scope().filter(TravelGrantsApplication.priority > 0).order(TravelGrantsApplication.priority).fetch()
-        grants_applications = self.my_scope().filter(TravelGrantsApplication.priority < 1).order(TravelGrantsApplication.priority, TravelGrantsApplication.sent_at).fetch()
+        if self.__scope:
+            prioritized_grants_applications = self.__scope.filter(TravelGrantsApplication.priority > 0).order(TravelGrantsApplication.priority).fetch()
+            grants_applications = self.__scope.filter(TravelGrantsApplication.priority < 1).order(TravelGrantsApplication.priority, TravelGrantsApplication.sent_at).fetch()
 
-        template_values = {
-            'application_year': APPLICATION_YEAR,
-            'grants_applications': grants_applications,
-            'prioritized_grants_applications': prioritized_grants_applications
-        }
+            template_values = {
+                'application_year': APPLICATION_YEAR,
+                'grants_applications': grants_applications,
+                'prioritized_grants_applications': prioritized_grants_applications
+            }
 
-        template = JINJA_ENVIRONMENT.get_template('prioritize.html')
-        self.response.write(template.render(template_values))
+            template = JINJA_ENVIRONMENT.get_template('prioritize.html')
+            self.response.write(template.render(template_values))
+        else:
+            template_values = {
+                'application_year': APPLICATION_YEAR,
+                'learning_associations': LearningAssociation.query().order(LearningAssociation.name).fetch(50)
+            }
+
+            template = JINJA_ENVIRONMENT.get_template('login.html')
+            self.response.write(template.render(template_values))
+
 
     def post(self):
-        item = self.my_scope().filter(TravelGrantsApplication.key==ndb.Key(urlsafe=self.request.POST.get('grants_application'))).get()
+        item = self.__scope.filter(TravelGrantsApplication.key==ndb.Key(urlsafe=self.request.POST.get('grants_application'))).get()
         if item:
             item.priority = int(self.request.POST.get('priority'))
             item.put()
             time.sleep(0.3)
+            self.redirect('/prioriter')
+        else:
+            self.abort(403)
+
+class OtpHandler(webapp2.RequestHandler):
+    def post(self):
+        otp = Otp()
+        otp_token = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(30))
+        logging.info(otp_token)
+        otp.token = SHA256.new(otp_token).hexdigest()
+        otp.learning_association = ndb.Key(urlsafe=self.request.POST.get('sf'))
+        learning_association = otp.learning_association.get()
+        if learning_association:
+            otp.put()
+            mail.send_mail(sender="Voksenopplæringsforbundet <vofo@vofo.no>",
+            to="%s <%s>" % (learning_association.name, learning_association.email),
+            subject="Engangspassord til reisestipendsøknader",
+            body="""
+Hei
+
+For å logge inn til reisestipendsøknadene, bruk denne lenken:
+
+https://???/otp/%s
+
+Lenken er gyldig i en time.
+
+Hilsen Voksenopplæringsforbundet
+""" % (otp_token))
+
+            template_values = {
+                'application_year': APPLICATION_YEAR,
+                'learning_association': learning_association
+            }
+
+            template = JINJA_ENVIRONMENT.get_template('login_sent.html')
+            self.response.write(template.render(template_values))
+
+        else:
+            self.abort(400)
+
+    def get(self, token):
+        self.response.set_cookie('auth_token', token, expires=datetime.datetime.now() + datetime.timedelta(hours=6)) #TODO: Secure
         self.redirect('/prioriter')
 
 
 app = webapp2.WSGIApplication([
     ('/', MainHandler),
     ('/admin', AdminHandler),
-    ('/prioriter', PrioritizeHandler)
+    ('/prioriter', PrioritizeHandler),
+    ('/otp', OtpHandler),
+    (r'/otp/(.+)', OtpHandler)
 ], debug=True)

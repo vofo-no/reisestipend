@@ -54,7 +54,7 @@
         <dt>Program for studieoppholdet</dt>
         <dd>{{app.study_program}}</dd>
         <dt>Andre offentlige tilskudd det søkes om til samme studiereise</dt>
-        <dd>{% if app.other_grants %}{% for item in app.other_grants %}{{item.provider}}, beløp: {{item.location}}
+        <dd>{% if app.other_grants %}{% for item in app.other_grants %}{{item.provider}}, beløp: {{item.amount}}
           {% endfor %}{% else %}(ingen){% endif %}</dd>
       </dl>
       <hr>
@@ -76,6 +76,7 @@
 </div>
 {%- endmacro %}
 
+<a class="btn btn-danger pull-right" href="/prioriter?logg_ut=true">Logg ut</a>
 <h1>Søknader fra ditt studieforbund</h1>
 <h2>Prioriterte søknader</h2>
 <div class="applications">

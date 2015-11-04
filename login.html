@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+{% block body %}
+<h1>Les og prioriter søknader for ditt studieforbund</h1>
+<form action="/otp" method="post">
+  <div class="form-group">
+    <label for="sf">Studieforbund:</label>
+    <select name="sf" id="sf" class="form-control input-lg" required>
+      <option value="">-- Velg studieforbund --</option>
+      {% for item in learning_associations %}
+      <option value="{{item.key.urlsafe()}}">{{item.name}}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button class="btn btn-lg btn-primary">
+    <span class="glyphicon glyphicon-lock"></span>
+    Logg inn</button>
+</form>
+<hr>
+<p class="text-muted">Når du logger inn vil et engangspassord bli sendt til epostadressen som er registrert på det valgte studieforbundet. Kontakt VOFO for å endre denne epostadressen.</p>
+{% endblock %}
