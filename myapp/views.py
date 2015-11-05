@@ -328,7 +328,7 @@ Hilsen Voksenopplæringsforbundet
 
     def get(self, token):
         auth_token = SHA256.new(token).hexdigest()
-        opt = get_valid_auth(auth_token)
+        otp = get_valid_auth(auth_token)
         if otp:
             otp.is_signed_in = True
             otp.put()
