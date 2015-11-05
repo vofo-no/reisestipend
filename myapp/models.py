@@ -50,4 +50,4 @@ class Otp(ndb.Model):
     token = ndb.StringProperty()
     is_signed_in = ndb.BooleanProperty(default=False)
     valid_from = ndb.DateTimeProperty(auto_now=True)
-    valid_until = ndb.ComputedProperty(lambda self: self.valid_from + datetime.timedelta(minutes=30))
+    valid_until = ndb.ComputedProperty(lambda self: self.valid_from + datetime.timedelta(minutes=62))
