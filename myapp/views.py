@@ -227,8 +227,11 @@ class AdminHandler(webapp2.RequestHandler):
         self.redirect('/admin')
 
 
-def get_valid_auth(token, in_use=False):
-    Otp.query(ndb.AND(Otp.token==token, Otp.valid_until>datetime.datetime.now(), Otp.is_signed_in==in_use)).get()
+def get_otp_by_token(token, fresh=False):
+    q = Otp.query(ndb.AND(Otp.token == token, Otp.valid_until > datetime.datetime.now()))
+    if fresh:
+        q.filter(Otp.is_signed_in == True)
+    return q.get()
 
 class PrioritizeHandler(webapp2.RequestHandler):
     __scope = None
@@ -248,7 +251,7 @@ class PrioritizeHandler(webapp2.RequestHandler):
                 self.response.delete_cookie('auth_token')
                 self.redirect('/prioriter')
             else:
-                otp = get_valid_auth(auth_token, True)
+                otp = get_otp_by_token(auth_token)
                 if otp:
                     self.__scope = TravelGrantsApplication.query(TravelGrantsApplication.learning_association == otp.learning_association)
                     otp.put() # Refresh expiration
@@ -294,9 +297,9 @@ class PrioritizeHandler(webapp2.RequestHandler):
 class OtpHandler(webapp2.RequestHandler):
     def post(self):
         otp = Otp()
-        otp_token = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(30))
-        otp.token = SHA256.new(otp_token).hexdigest()
         otp.learning_association = ndb.Key(urlsafe=self.request.POST.get('sf'))
+        otp_token = SHA256.new(str(otp.learning_association.id()) + ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(30))).hexdigest()
+        otp.token = SHA256.new(otp_token).hexdigest()
         learning_association = otp.learning_association.get()
         if learning_association:
             otp.put()
@@ -328,9 +331,16 @@ Hilsen Voksenopplæringsforbundet
 
     def get(self, token):
         auth_token = SHA256.new(token).hexdigest()
-        otp = get_valid_auth(auth_token)
+        otp = get_otp_by_token(auth_token, fresh=True)
         if otp:
             otp.is_signed_in = True
             otp.put()
             self.response.set_cookie('auth_token', token, expires=datetime.datetime.now() + datetime.timedelta(hours=6), secure=True)
-        self.redirect('/prioriter')
+            self.redirect('/prioriter')
+        else:
+            template_values = {
+                'application_year': myapp.APPLICATION_YEAR
+            }
+
+            template = JINJA_ENVIRONMENT.get_template('login_failed.html')
+            self.response.write(template.render(template_values))

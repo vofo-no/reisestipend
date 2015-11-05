@@ -1,4 +1,2 @@
-languages:
-  Python: true
 exclude_paths:
-- dateutil/*
+- "dateutil/*"
