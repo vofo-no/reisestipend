@@ -6,7 +6,9 @@
   <div class="panel-heading">
     <div class="row">
       <div class="col-xs-8">
-      <p class="panel-title"><small>{{app.sent_at.strftime("%d.%m.%y")}}</small><br>Søknad fra {{app.name}} om reisestipend til {{app.location}}</p>
+      <p class="panel-title"><small>{{app.sent_at.replace(tzinfo=UTC).astimezone(TZONE).strftime("%d.%m.%y %H:%M")}}
+        {% if is_admin %}{{app.learning_association_name}},{% endif %}
+        {{app.organization}}</small><br>Søknad fra {{app.name}} om reisestipend til {{app.location}}</p>
     </div>
     <div class="col-xs-4 text-right">
       <span class="badge badge-default">
