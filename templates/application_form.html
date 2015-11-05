@@ -5,6 +5,9 @@
         <p>Søkere som har mottatt reisestipend fra KD/VOFO i løpet av de siste 5 årene ({{application_year-6}}-{{application_year-1}}) vil ikke bli vurdert.</p>
       </div>
       <hr>
+      {% if is_locked %}
+      <div class="alert alert-danger">Skjemaet er stengt fordi søknadsfristen er gått ut.</div>
+      {% else %}
       <form method="post" class="confirm">
         <fieldset>
           <legend><span class="glyphicon glyphicon-user"></span>  Opplysninger om søkeren</legend>
@@ -53,4 +56,5 @@
         <p>Søknaden sendes til studieforbundets sentralledd, som samler og prioriterer søknadene før de sendes til VOFO.</p>
         <button class="btn btn-lg btn-primary"><span class="glyphicon glyphicon-send"></span> &nbsp; Send søknaden</button>
       </form>
+      {% endif %}
 {% endblock %}

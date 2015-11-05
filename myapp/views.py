@@ -30,6 +30,14 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     autoescape=True)
 
 class MainHandler(webapp2.RequestHandler):
+    __locked = True
+    __grace_locked = True
+
+    def dispatch(self):
+        self.__locked = datetime.datetime.now() > datetime.datetime(myapp.APPLICATION_YEAR-1, 11, 25, 5)
+        self.__grace_locked = datetime.datetime.now() > datetime.datetime(myapp.APPLICATION_YEAR-1, 11, 25, 7)
+        super(MainHandler, self).dispatch()
+
     def render_form(self, grants_application, errors={}):
         learning_associations = LearningAssociation.query().order(LearningAssociation.name).fetch(50)
 
@@ -43,7 +51,8 @@ class MainHandler(webapp2.RequestHandler):
             'application_year': myapp.APPLICATION_YEAR,
             'learning_associations': learning_associations,
             'grants_application': grants_application,
-            'errors': errors
+            'errors': errors,
+            'is_locked': self.__locked
         }
 
         template = JINJA_ENVIRONMENT.get_template('application_form.html')
@@ -67,87 +76,39 @@ class MainHandler(webapp2.RequestHandler):
         self.render_form(grants_application)
 
     def post(self):
-        grants_application = TravelGrantsApplication(parent=ndb.Key('Year', myapp.APPLICATION_YEAR))
-        errors = {}
-
-        for item in ['name', 'address', 'postal_code', 'postal_city', 'phone', 'email', 'organization', 'location', 'time_span', 'expenses', 'purpose', 'study_program']:
-            setattr(grants_application, item, self.request.POST.get(item))
-            if not getattr(grants_application, item):
-                errors[item] = 'missing'
-            elif item == 'email':
-                if not re.match(r"[^@]+@[^@]+\.[^@]+", grants_application.email):
-                    errors[item] = 'invalid'
-
-        grants_application.learning_association = ndb.Key(urlsafe=self.request.POST.get('learning_association'))
-        learning_association = grants_application.learning_association.get()
-        if not learning_association:
-            errors['learning_association'] = 'missing'
-
-        self.enum_params('previous_grants', ['year','location'], grants_application.previous_grants)
-        self.enum_params('other_grants', ['provider','amount'], grants_application.other_grants)
-
-        if (len(errors) > 0):
-            self.render_form(grants_application, errors)
+        if self.__grace_locked:
+            self.abort(403)
         else:
-            grants_application.sent_at = datetime.datetime.now()
-            grants_application.put()
+            grants_application = TravelGrantsApplication(parent=ndb.Key('Year', myapp.APPLICATION_YEAR))
+            errors = {}
 
-            previous_grants_text = []
-            if len(grants_application.previous_grants) > 0:
-                for item in grants_application.previous_grants:
-                    previous_grants_text.append("- År: %s\n- Sted (land): %s\n" % (item.year, item.location))
+            for item in ['name', 'address', 'postal_code', 'postal_city', 'phone', 'email', 'organization', 'location', 'time_span', 'expenses', 'purpose', 'study_program']:
+                setattr(grants_application, item, self.request.POST.get(item))
+                if not getattr(grants_application, item):
+                    errors[item] = 'missing'
+                elif item == 'email':
+                    if not re.match(r"[^@]+@[^@]+\.[^@]+", grants_application.email):
+                        errors[item] = 'invalid'
+
+            grants_application.learning_association = ndb.Key(urlsafe=self.request.POST.get('learning_association'))
+            learning_association = grants_application.learning_association.get()
+            if not learning_association:
+                errors['learning_association'] = 'missing'
+
+            self.enum_params('previous_grants', ['year','location'], grants_application.previous_grants)
+            self.enum_params('other_grants', ['provider','amount'], grants_application.other_grants)
+
+            if (len(errors) > 0):
+                self.render_form(grants_application, errors)
             else:
-                previous_grants_text.append("[ingen]")
+                grants_application.sent_at = datetime.datetime.now()
+                grants_application.put()
 
-            other_grants_text = []
-            if len(grants_application.other_grants) > 0:
-                for item in grants_application.other_grants:
-                    other_grants_text.append("- Fra: %s\n- Beløp: %s\n" % (item.provider, item.amount))
-            else:
-                other_grants_text.append("[ingen]")
-
-            application_text = """
-SØKER:
-%s
-%s
-%s %s
-
-Telefon (dagtid): %s
-Epostadresse:     %s
-
-Organisasjon/arbeidsfelt/funksjon:
-%s
-
-Studieforbund:
-%s
-
-Tidligere tildelt stipend fra KD/VOFO:
-%s
-
-PLAN FOR REISEN:
-Sted (land): %s
-Tidsrom:     %s
-Antatte totale reisekostnader: %s
-
-Formål med studiereisen:
-%s
-
-Program for studieoppholdet:
-%s
-
-Andre offentlige tilskudd det søkes om til samme studiereise:
-%s
-
-Søknad sendt %s.
-""" % (grants_application.name, grants_application.address, grants_application.postal_code,
-grants_application.postal_city, grants_application.phone, grants_application.email,
-grants_application.organization, learning_association.name, "\n".join(previous_grants_text), grants_application.location,
-grants_application.time_span, grants_application.expenses, grants_application.purpose,
-grants_application.study_program, "\n".join(other_grants_text), grants_application.sent_at.replace(tzinfo=myapp.UTC).astimezone(myapp.TZONE).strftime("%d.%m.%y %H:%M"))
-            mail.send_mail(sender="Voksenopplæringsforbundet <mg@vofo.no>",
-                           to="%s <%s>" % (learning_association.name, learning_association.email),
-                           subject="Reisestipendsøknad fra %s" % (grants_application.name),
-                           body="""
+                application_text = myapp.application_text(grants_application)
+                mail.send_mail(sender="Voksenopplæringsforbundet <mg@vofo.no>",
+                               to="%s <%s>" % (learning_association.name, learning_association.email),
+                               subject="Reisestipendsøknad fra %s" % (grants_application.name),
+                               body="""
 Hei
 
 Det har kommet en ny søknad om reisestipend til deres studieforbund.
@@ -160,10 +121,10 @@ Gå til %sprioriter for å lese og prioritere søknader fra deres studieforbund.
 Hilsen Voksenopplæringsforbundet
 """ % (application_text, myapp.APPLICATION_URL))
 
-            mail.send_mail(sender="Voksenopplæringsforbundet <mg@vofo.no>",
-                           to="%s <%s>" % (grants_application.name, grants_application.email),
-                           subject="Reisestipendsøknad til %s" % (learning_association.name),
-                           body="""
+                mail.send_mail(sender="Voksenopplæringsforbundet <mg@vofo.no>",
+                               to="%s <%s>" % (grants_application.name, grants_application.email),
+                               subject="Reisestipendsøknad til %s" % (learning_association.name),
+                               body="""
 Hei %s
 
 Du har nettopp sendt søknad om reisestipend til %s.
@@ -174,15 +135,14 @@ Du har nettopp sendt søknad om reisestipend til %s.
 Hilsen Voksenopplæringsforbundet
 """ % (grants_application.name, grants_application.email, application_text))
 
-            template_values = {
-                'application_year': myapp.APPLICATION_YEAR,
-                'grants_application': grants_application,
-                'learning_association': learning_association
-            }
+                template_values = {
+                    'application_year': myapp.APPLICATION_YEAR,
+                    'grants_application': grants_application,
+                    'learning_association': learning_association
+                }
 
-            template = JINJA_ENVIRONMENT.get_template('hooray.html')
-            self.response.write(template.render(template_values))
-
+                template = JINJA_ENVIRONMENT.get_template('hooray.html')
+                self.response.write(template.render(template_values))
 
 class AdminHandler(webapp2.RequestHandler):
     def dispatch(self):
@@ -236,16 +196,19 @@ def get_otp_by_token(token, fresh=False):
 
 class PrioritizeHandler(webapp2.RequestHandler):
     __scope = None
+    __locked = True
 
     def dispatch(self):
         self.__scope = None
         auth_token = self.request.cookies.get('auth_token')
         if users.is_current_user_admin():
+            self.__locked = False
             if self.request.get('logg_ut') == 'true':
                 self.redirect(users.create_logout_url('/prioriter'))
             else:
                 self.__scope = TravelGrantsApplication.query()
         elif auth_token:
+            self.__locked = datetime.datetime.now() > datetime.datetime(myapp.APPLICATION_YEAR-1, 12, 2, 5)
             auth_token = SHA256.new(auth_token).hexdigest()
             if self.request.get('logg_ut') == 'true':
                 ndb.delete_multi_async(Otp.query(ndb.OR(Otp.token==auth_token, Otp.valid_until<datetime.datetime.now())).fetch(options=ndb.QueryOptions(keys_only=True)))
@@ -270,7 +233,8 @@ class PrioritizeHandler(webapp2.RequestHandler):
                 'prioritized_grants_applications': prioritized_grants_applications,
                 'TZONE': myapp.TZONE,
                 'UTC': myapp.UTC,
-                'is_admin': users.is_current_user_admin()
+                'is_admin': users.is_current_user_admin(),
+                'is_locked': self.__locked
             }
 
             template = JINJA_ENVIRONMENT.get_template('prioritize.html')
@@ -286,14 +250,17 @@ class PrioritizeHandler(webapp2.RequestHandler):
 
 
     def post(self):
-        item = self.__scope.filter(TravelGrantsApplication.key==ndb.Key(urlsafe=self.request.POST.get('grants_application'))).get()
-        if item:
-            item.priority = int(self.request.POST.get('priority'))
-            item.put()
-            time.sleep(0.3)
-            self.redirect('/prioriter')
-        else:
+        if self.__locked:
             self.abort(403)
+        else:
+            item = self.__scope.filter(TravelGrantsApplication.key==ndb.Key(urlsafe=self.request.POST.get('grants_application'))).get()
+            if item:
+                item.priority = int(self.request.POST.get('priority'))
+                item.put()
+                time.sleep(0.3)
+                self.redirect('/prioriter')
+            else:
+                self.abort(403)
 
 class OtpHandler(webapp2.RequestHandler):
     def post(self):

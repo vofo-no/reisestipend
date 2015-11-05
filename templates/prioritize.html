@@ -2,11 +2,11 @@
 {% block body %}
 
 {% macro application(app) -%}
-<div class="panel panel-primary">
+<div class="panel panel-{% if app.priority==0 %}info{% else %}primary{% endif %}">
   <div class="panel-heading">
     <div class="row">
       <div class="col-xs-8">
-      <p class="panel-title"><small>{{app.sent_at.replace(tzinfo=UTC).astimezone(TZONE).strftime("%d.%m.%y %H:%M")}}
+      <p class="panel-title"><small>{{app.sent_at.replace(tzinfo=UTC).astimezone(TZONE).strftime("%d.%m.%y")}}
         {% if is_admin %}{{app.learning_association_name}},{% endif %}
         {{app.organization}}</small><br>Søknad fra {{app.name}} om reisestipend til {{app.location}}</p>
     </div>
@@ -60,6 +60,9 @@
           {% endfor %}{% else %}(ingen){% endif %}</dd>
       </dl>
       <hr>
+      {% if is_locked %}
+      <p>Fristen for å endre prioritet er gått ut.</p>
+      {% else %}
       <form method="post" class="form-inline silent">
       <input type="hidden" name="grants_application" value="{{app.key.urlsafe()}}" />
       <div class="form-group">
@@ -67,12 +70,19 @@
         <select id="priority_{{app.key.id()}}" name="priority" class="form-control">
           <option value="0">Ikke prioritert</option>
           {% for i in range(1, 11)%}
-          <option value="{{i}}" {% if i==app.priority %} selected{% endif %}>Prioritet {{i}}</option>
+          <option value="{{i}}"
+            {% if i==app.priority %} selected{% endif %}
+            {% if not app.priority > 0 and prioritized_grants_applications|length >= 10 and not is_admin %} disabled{% endif %}
+          >Prioritet {{i}}</option>
           {% endfor %}
         </select>
         <button type="submit" class="btn btn-primary">Lagre</button>
+        {% if not app.priority > 0 and prioritized_grants_applications|length >= 10 and not is_admin %}
+        <span class="help-block">Du har allerede prioritert 10 søknader.</span>
+        {% endif %}
       </div>
       </form>
+      {% endif %}
     </div>
   </div>
 </div>
@@ -80,18 +90,29 @@
 
 <a class="btn btn-danger pull-right" href="/prioriter?logg_ut=true">Logg ut</a>
 <h1>Søknader fra ditt studieforbund</h1>
+<hr>
 <h2>Prioriterte søknader</h2>
+<p>Søknadene som ligger her vil bli behandlet av VOFO i prioritert rekkefølge. <strong>Frist for å gjøre endringer er 1. desember.</strong></p>
 <div class="applications">
-  {% for item in prioritized_grants_applications %}
-  {{application(item)}}
-  {% endfor %}
+  {% if prioritized_grants_applications %}
+    {% for item in prioritized_grants_applications %}
+    {{application(item)}}
+    {% endfor %}
+  {% else %}
+  <div class="alert alert-info">Du har ikke prioritert noen søknader ennå.</div>
+  {% endif %}
 </div>
 <hr>
 <h2>Andre søknader</h2>
+<p>Her finner du søknader som ikke er behandlet eller som ikke er prioritert. Disse søknadene blir ikke vurdert av VOFO, med mindre de får en prioritet innen 1. desember (studieforbundets prioritet angis nederst på hver søknad).</p>
 <div class="applications">
-  {% for item in grants_applications %}
-  {{application(item)}}
-  {% endfor %}
+  {% if grants_applications %}
+    {% for item in grants_applications %}
+    {{application(item)}}
+    {% endfor %}
+  {% else %}
+  <div class="alert alert-info">Du har ingen nye eller ikke-prioriterte søknader.</div>
+  {% endif %}
 </div>
 
 {% endblock %}
