@@ -10,6 +10,7 @@ import time
 import datetime
 import string
 import random
+import re
 
 from google.appengine.api import mail
 from google.appengine.api import users
@@ -74,7 +75,7 @@ class MainHandler(webapp2.RequestHandler):
             if not getattr(grants_application, item):
                 errors[item] = 'missing'
             elif item == 'email':
-                if not mail.is_email_valid(grants_application.email):
+                if not re.match(r"[^@]+@[^@]+\.[^@]+", grants_application.email):
                     errors[item] = 'invalid'
 
         grants_application.learning_association = ndb.Key(urlsafe=self.request.POST.get('learning_association'))

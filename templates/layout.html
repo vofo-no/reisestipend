@@ -58,7 +58,7 @@
       <input type="{{type}}" name="{{name}}" id="{{id or name}}" size="{{size}}" value="{{true_value or grants_application[name]|e}}" class="form-control" {%- if required %} required{%- endif %} />
       {% endif %}
       {% if errors[name] %}
-      <span class="help-block">{{errors[name]=='missing' and 'må oppgis'}}</span>
+      <span class="help-block">{{{'missing':'må oppgis','invalid':'er ikke gyldig'}.get(errors[name], errors[name])}}</span>
       {% endif %}
     </div>
     {%- endmacro %}
