@@ -4,24 +4,22 @@
 from dateutil import tz
 
 APPLICATION_YEAR = 2016
-APPLICATION_URL = "https://reisestipend-1117.appspot.com/"
+APPLICATION_URL = "https://www.voforeisestipend.no/"
 TZONE = tz.gettz('Europe/Oslo')
 UTC = tz.gettz('UTC')
 
-def application_text(grants_application):
-    previous_grants_text = []
-    if len(grants_application.previous_grants) > 0:
-        for item in grants_application.previous_grants:
-            previous_grants_text.append("- %s, sted (land): %s" % (item.year, item.location))
+def enum_to_list(items, target_string, props):
+    outlist = []
+    if len(items) > 0:
+        for item in items:
+            outlist.append(target_string % (getattr(item, props[0]), getattr(item, props[1])))
     else:
-        previous_grants_text.append("[ingen]")
+        outlist.append("[ingen]")
+    return outlist
 
-    other_grants_text = []
-    if len(grants_application.other_grants) > 0:
-        for item in grants_application.other_grants:
-            other_grants_text.append("- %s, beløp: %s" % (item.provider, item.amount))
-    else:
-        other_grants_text.append("[ingen]")
+def application_text(grants_application):
+    previous_grants_text = enum_to_list(grants_application.previous_grants, "- %s, sted (land): %s", ['year', 'location'])
+    other_grants_text = enum_to_list(grants_application.other_grants, "- %s, beløp: %s", ['provider', 'amount'])
 
     return """
 SØKER:

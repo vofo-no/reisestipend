@@ -113,13 +113,19 @@ Hei
 
 Det har kommet en ny søknad om reisestipend til deres studieforbund.
 
-%s
+Søknaden er fra %s (%s) og gjelder studiereise til %s i tidsrommet %s.
 
 Gå til %sprioriter for å lese og prioritere søknader fra deres studieforbund.
 
+Husk at fristen for å prioritere søknader er 1. desember.
+
 --
 Hilsen Voksenopplæringsforbundet
-""" % (application_text, myapp.APPLICATION_URL))
+""" % (grants_application.name,
+       grants_application.organization,
+       grants_application.location,
+       grants_application.time_span,
+       myapp.APPLICATION_URL))
 
                 mail.send_mail(sender="Voksenopplæringsforbundet <mg@vofo.no>",
                                to="%s <%s>" % (grants_application.name, grants_application.email),
@@ -127,13 +133,15 @@ Hilsen Voksenopplæringsforbundet
                                body="""
 Hei %s
 
-Du har nettopp sendt søknad om reisestipend til %s.
+Du har sendt søknad om reisestipend til %s.
 
 %s
 
+Ta kontakt med studieforbundet på %s hvis du har spørsmål.
+
 --
 Hilsen Voksenopplæringsforbundet
-""" % (grants_application.name, grants_application.email, application_text))
+""" % (grants_application.name, grants_application.learning_association_name, application_text, learning_association.email))
 
                 template_values = {
                     'application_year': myapp.APPLICATION_YEAR,
