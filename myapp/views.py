@@ -191,7 +191,7 @@ class AdminHandler(webapp2.RequestHandler):
 def get_otp_by_token(token, fresh=False):
     q = Otp.query(ndb.AND(Otp.token == token, Otp.valid_until > datetime.datetime.now()))
     if fresh:
-        q = q.filter(Otp.is_signed_in != True)
+        q = q.filter(Otp.is_signed_in == False)
     return q.get()
 
 class PrioritizeHandler(webapp2.RequestHandler):
