@@ -245,7 +245,11 @@ class PrioritizeHandler(webapp2.RequestHandler):
                 'is_locked': self.__locked
             }
 
-            template = JINJA_ENVIRONMENT.get_template('prioritize.html')
+            if self.request.get('print') == 'true':
+                template = JINJA_ENVIRONMENT.get_template('prints.html')
+            else:
+                template = JINJA_ENVIRONMENT.get_template('prioritize.html')
+
             self.response.write(template.render(template_values))
         else:
             template_values = {

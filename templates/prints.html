@@ -1,0 +1,72 @@
+
+{% macro application(app) -%}
+<div class="appsheet">
+  <header>
+    <h3 style="float: right;">Prioritet: {{app.priority}}</h3>
+    <h3>{{app.learning_association_name}}</h3>
+  </header>
+  <h1>Søknad om reisestipend</h1>
+  <address>
+    <strong>{{app.name}}</strong><br>
+    {{app.address}}, {{app.postal_code}} {{app.postal_city}}<br>
+    Telefon (dagtid): {{app.phone}}<br>
+    <a href="mailto:{{app.email}}">{{app.email}}</a>
+  </address>
+  <dl>
+    <dt>Organisasion/arbeidsfelt/funksjon</dt>
+    <dd>{{app.organization}}</dd>
+    <dt>Studieforbund</dt>
+    <dd>{{app.learning_association_name}}<br></dd>
+    <dt>Tidligere tildelt stipend</dt>
+    <dd>{% if app.previous_grants %}{% for item in app.previous_grants %}{{item.year}}: {{item.location}}
+      {% endfor %}{% else %}(ingen){% endif %}</dd>
+  </dl>
+  <h2>Plan for studiereisen</h2>
+  <dl>
+    <dt>Sted (land)</dt>
+    <dd>{{app.location}}</dd>
+    <dt>Tidsrom</dt>
+    <dd>{{app.time_span}}<br></dd>
+    <dt>Antatte totale reisekostnader</dt>
+    <dd>{{app.expenses}}</dd>
+    <dt>Formål med stuidereisen</dt>
+    <dd>{{app.purpose}}</dd>
+    <dt>Program for studieoppholdet</dt>
+    <dd>{{app.study_program}}</dd>
+    <dt>Andre offentlige tilskudd det søkes om til samme studiereise</dt>
+    <dd>{% if app.other_grants %}{% for item in app.other_grants %}{{item.provider}}, beløp: {{item.amount}}
+      {% endfor %}{% else %}(ingen){% endif %}</dd>
+  </dl>
+</div>
+{%- endmacro %}
+
+<html>
+<head>
+  <title></title>
+  <style type="text/css">
+  body {
+    font-family: "Calibri", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    line-height: 1.25;
+    font-size: 15px;
+  }
+  .appsheet:not(:first-of-type) { page-break-before: always; }
+  header { border-bottom: 1px solid #666; margin-bottom: 1em; }
+  header h3 { margin: 0; }
+  address { font-style: normal; }
+  dl, address { margin: 0 0 .5em;}
+  dt { font-size: .75em; }
+  dd { margin-left: 0; margin-bottom: .5em; white-space: pre-line; }
+  dd, address { border: 1px solid #666; padding: 6px 7px; }
+  h1, h2 { margin-bottom: 0; }
+  </style>
+</head>
+<body>
+  {% if prioritized_grants_applications %}
+    {% for item in prioritized_grants_applications %}
+    {{application(item)}}
+    {% endfor %}
+  {% else %}
+  <p><em>Det finnes ingen prioriterte søknader.</em></p>
+  {% endif %}
+</body>
+</html>
