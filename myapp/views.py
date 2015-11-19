@@ -267,7 +267,12 @@ class PrioritizeHandler(webapp2.RequestHandler):
         else:
             item = self.__scope.filter(TravelGrantsApplication.key==ndb.Key(urlsafe=self.request.POST.get('grants_application'))).get()
             if item:
-                item.priority = int(self.request.POST.get('priority'))
+                if self.request.POST.get('priority').isdigit():
+                    item.priority = int(self.request.POST.get('priority'))
+                elif self.request.POST.get('priority') == 'nil':
+                    del item.priority
+                else:
+                    self.abort(400)
                 item.put()
                 time.sleep(0.3)
                 self.redirect('/prioriter')
