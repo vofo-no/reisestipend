@@ -34,8 +34,8 @@ class MainHandler(webapp2.RequestHandler):
     __grace_locked = True
 
     def dispatch(self):
-        self.__locked = datetime.datetime.now() > datetime.datetime(myapp.APPLICATION_YEAR-1, 11, 25, 5)
-        self.__grace_locked = datetime.datetime.now() > datetime.datetime(myapp.APPLICATION_YEAR-1, 11, 25, 7)
+        self.__locked = myapp.time_locked(11, 25, 5)
+        self.__grace_locked = myapp.time_locked(11, 25, 7)
         super(MainHandler, self).dispatch()
 
     def render_form(self, grants_application, errors={}):
@@ -216,7 +216,7 @@ class PrioritizeHandler(webapp2.RequestHandler):
             else:
                 self.__scope = TravelGrantsApplication.query()
         elif auth_token:
-            self.__locked = datetime.datetime.now() > datetime.datetime(myapp.APPLICATION_YEAR-1, 12, 2, 5)
+            self.__locked = myapp.time_locked(12, 2, 5)
             auth_token = SHA256.new(auth_token).hexdigest()
             if self.request.get('logg_ut') == 'true':
                 ndb.delete_multi_async(Otp.query(ndb.OR(Otp.token==auth_token, Otp.valid_until<datetime.datetime.now())).fetch(options=ndb.QueryOptions(keys_only=True)))

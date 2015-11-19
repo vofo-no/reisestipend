@@ -17,6 +17,9 @@ def enum_to_list(items, target_string, props):
         outlist.append("[ingen]")
     return outlist
 
+def time_locked(month, day, hour):
+    return datetime.datetime.now() > datetime.datetime(APPLICATION_YEAR-1, month, day, hour)
+
 def application_text(grants_application):
     previous_grants_text = enum_to_list(grants_application.previous_grants, "- %s, sted (land): %s", ['year', 'location'])
     other_grants_text = enum_to_list(grants_application.other_grants, "- %s, beløp: %s", ['provider', 'amount'])
