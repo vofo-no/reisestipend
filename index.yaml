@@ -23,6 +23,30 @@ indexes:
 
 - kind: TravelGrantsApplication
   properties:
+  - name: application_year
+  - name: learning_association
+  - name: priority
+
+- kind: TravelGrantsApplication
+  properties:
+  - name: application_year
+  - name: learning_association
+  - name: priority
+  - name: sent_at
+
+- kind: TravelGrantsApplication
+  properties:
+  - name: application_year
+  - name: priority
+
+- kind: TravelGrantsApplication
+  properties:
+  - name: application_year
+  - name: priority
+  - name: sent_at
+
+- kind: TravelGrantsApplication
+  properties:
   - name: learning_association
   - name: priority
 

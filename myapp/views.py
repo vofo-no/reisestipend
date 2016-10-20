@@ -214,7 +214,7 @@ class PrioritizeHandler(webapp2.RequestHandler):
             if self.request.get('logg_ut') == 'true':
                 self.redirect(users.create_logout_url('/prioriter'))
             else:
-                self.__scope = TravelGrantsApplication.query()
+                self.__scope = TravelGrantsApplication.query(TravelGrantsApplication.application_year == myapp.APPLICATION_YEAR)
         elif auth_token:
             self.__locked = myapp.time_locked(12, 2, 5)
             auth_token = SHA256.new(auth_token).hexdigest()
@@ -225,7 +225,7 @@ class PrioritizeHandler(webapp2.RequestHandler):
             else:
                 otp = get_otp_by_token(auth_token)
                 if otp:
-                    self.__scope = TravelGrantsApplication.query(TravelGrantsApplication.learning_association == otp.learning_association)
+                    self.__scope = TravelGrantsApplication.query(ndb.AND(TravelGrantsApplication.learning_association == otp.learning_association, TravelGrantsApplication.application_year == myapp.APPLICATION_YEAR))
                     otp.put() # Refresh expiration
 
         super(PrioritizeHandler, self).dispatch()
