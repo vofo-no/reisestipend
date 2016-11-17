@@ -34,8 +34,8 @@ class MainHandler(webapp2.RequestHandler):
     __grace_locked = True
 
     def dispatch(self):
-        self.__locked = myapp.time_locked(11, 18, 5)
-        self.__grace_locked = myapp.time_locked(11, 18, 7)
+        self.__locked = myapp.time_locked(11, 21, 5)
+        self.__grace_locked = myapp.time_locked(11, 21, 7)
         super(MainHandler, self).dispatch()
 
     def render_form(self, grants_application, errors={}):
