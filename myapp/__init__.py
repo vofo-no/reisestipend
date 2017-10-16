@@ -5,7 +5,7 @@ import datetime
 
 from dateutil import tz
 
-APPLICATION_YEAR = 2017
+APPLICATION_YEAR = 2018
 APPLICATION_URL = "https://www.voforeisestipend.no/"
 TZONE = tz.gettz('Europe/Oslo')
 UTC = tz.gettz('UTC')
