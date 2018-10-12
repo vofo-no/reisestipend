@@ -105,7 +105,7 @@ class MainHandler(webapp2.RequestHandler):
                 grants_application.put()
 
                 application_text = myapp.application_text(grants_application)
-                mail.send_mail(sender="Voksenopplæringsforbundet <mg@vofo.no>",
+                mail.send_mail(sender="Voksenopplæringsforbundet <vofo@vofo.no>",
                                to="%s <%s>" % (learning_association.name, learning_association.email),
                                subject="Reisestipendsøknad fra %s" % (grants_application.name),
                                body="""
@@ -127,7 +127,7 @@ Hilsen Voksenopplæringsforbundet
        grants_application.time_span,
        myapp.APPLICATION_URL))
 
-                mail.send_mail(sender="Voksenopplæringsforbundet <mg@vofo.no>",
+                mail.send_mail(sender="Voksenopplæringsforbundet <vofo@vofo.no>",
                                to="%s <%s>" % (grants_application.name, grants_application.email),
                                subject="Reisestipendsøknad til %s" % (learning_association.name),
                                body="""
@@ -288,7 +288,7 @@ class OtpHandler(webapp2.RequestHandler):
         learning_association = otp.learning_association.get()
         if learning_association:
             otp.put()
-            mail.send_mail(sender="Voksenopplæringsforbundet <mg@vofo.no>",
+            mail.send_mail(sender="Voksenopplæringsforbundet <vofo@vofo.no>",
             to="%s <%s>" % (learning_association.name, learning_association.email),
             subject="Engangspassord til reisestipendsøknader",
             body="""
