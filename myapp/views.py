@@ -34,8 +34,8 @@ class MainHandler(webapp2.RequestHandler):
     __grace_locked = True
 
     def dispatch(self):
-        self.__locked = myapp.time_locked(11, 20, 5)
-        self.__grace_locked = myapp.time_locked(11, 20, 7)
+        self.__locked = myapp.time_locked(11, 18, 5)
+        self.__grace_locked = myapp.time_locked(11, 18, 7)
         super(MainHandler, self).dispatch()
 
     def render_form(self, grants_application, errors={}):
@@ -117,7 +117,7 @@ Søknaden er fra %s (%s) og gjelder studiereise til %s i tidsrommet %s.
 
 Gå til %sprioriter for å lese og prioritere søknader fra deres studieforbund.
 
-Husk at fristen for å prioritere søknader er 30. november.
+Husk at fristen for å prioritere søknader er 28. november.
 
 --
 Hilsen Voksenopplæringsforbundet
@@ -216,7 +216,7 @@ class PrioritizeHandler(webapp2.RequestHandler):
             else:
                 self.__scope = TravelGrantsApplication.query(TravelGrantsApplication.application_year == myapp.APPLICATION_YEAR)
         elif auth_token:
-            self.__locked = myapp.time_locked(12, 1, 5)
+            self.__locked = myapp.time_locked(11, 29, 5)
             auth_token = SHA256.new(auth_token).hexdigest()
             if self.request.get('logg_ut') == 'true':
                 ndb.delete_multi_async(Otp.query(ndb.OR(Otp.token==auth_token, Otp.valid_until<datetime.datetime.now())).fetch(options=ndb.QueryOptions(keys_only=True)))
