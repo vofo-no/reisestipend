@@ -41,7 +41,7 @@ Organisasjon/arbeidsfelt/funksjon:
 Studieforbund:
 %s
 
-Tidligere tildelt stipend fra KD/VOFO:
+Tidligere tildelt stipend fra KD/Vofo:
 %s
 
 PLAN FOR REISEN:

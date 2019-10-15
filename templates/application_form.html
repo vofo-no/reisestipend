@@ -2,7 +2,7 @@
 {% block body %}
       <div class="alert alert-warning">
         <span class="h3">Søknadsfrist er 17. november {{application_year-1}}.</span>
-        <p>Søkere som har mottatt reisestipend fra KD/VOFO i løpet av de siste 5 årene ({{application_year-6}}-{{application_year-1}}) vil ikke bli vurdert.</p>
+        <p>Søkere som har mottatt reisestipend fra KD/Vofo i løpet av de siste 5 årene ({{application_year-6}}-{{application_year-1}}) vil ikke bli vurdert.</p>
       </div>
       <hr>
       {% if is_locked %}
@@ -25,7 +25,7 @@
         </fieldset>
         <hr>
         <fieldset>
-          <legend><span class="glyphicon glyphicon-time"></span> Tidligere tildelt stipend fra KD/VOFO</legend>
+          <legend><span class="glyphicon glyphicon-time"></span> Tidligere tildelt stipend fra KD/Vofo</legend>
           {% for item in grants_application.previous_grants %}
           <div class="form-group row">
             {{input('previous_grants_year', 'Årstall', type='year', id='previous_grants_year_%d'%(loop.index), wrapper_class='col-xs-4', required=False, true_value=item.year)}}
@@ -53,8 +53,8 @@
           {% endfor %}
         </fieldset>
         <hr>
-        <p>Ved å sende søknaden bekrefter du at opplysningene i søknaden er korrekte, og at du som søker tilfredsstiller de kravene som stilles til mottakere av VOFOs reisestipend. Les hele utlysningen på <a href="http://www.vofo.no/reisestipend" target="_blank">vofo.no/reisestipend</a>.</p>
-        <p>Søknaden blir sendt til studieforbundets sentralledd, som samler og prioriterer søknadene før de sendes til VOFO.</p>
+        <p>Ved å sende søknaden bekrefter du at opplysningene i søknaden er korrekte, og at du som søker tilfredsstiller de kravene som stilles til mottakere av Vofos reisestipend. Les hele utlysningen på <a href="http://www.vofo.no/reisestipend" target="_blank">vofo.no/reisestipend</a>.</p>
+        <p>Søknaden blir sendt til studieforbundets sentralledd, som samler og prioriterer søknadene før de sendes til Vofo.</p>
         <button class="btn btn-lg btn-primary"><span class="glyphicon glyphicon-send"></span> &nbsp; Send søknaden</button>
       </form>
       {% endif %}
