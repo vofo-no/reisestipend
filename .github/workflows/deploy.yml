@@ -1,0 +1,23 @@
+name: Deploy release to AppEngine
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v1
+    
+    - name: Log in to gcloud
+      uses: actions/gcloud/auth@master
+      env:
+        GCLOUD_AUTH: ${{ secrets.GCLOUD_AUTH }}
+        
+    - name: Deploy new version to AppEngine
+      uses: actions/gcloud/cli@master
+      with:
+        args: "app deploy --project=reisestipend-1117"
